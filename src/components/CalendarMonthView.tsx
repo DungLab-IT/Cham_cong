@@ -7,8 +7,10 @@ import {
   Info,
   Sparkles,
   Layers,
-  Utensils,
   Zap,
+  Edit2,
+  CheckCircle2,
+  Coffee,
 } from 'lucide-react';
 import { MonthSalarySummary, SalaryConfig, DayAttendance, DaySalaryDetail } from '../types';
 import { formatVND } from '../utils/salaryCalculator';
@@ -37,26 +39,85 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
 
   // First day of month day-of-week (0 is Sun, 1 is Mon, ...)
   const firstDayObj = new Date(year, month - 1, 1);
-  let firstDayIndex = firstDayObj.getDay(); // 0 = Sun, 1 = Mon ...
-  // Convert so Mon is 0, Sun is 6
+  let firstDayIndex = firstDayObj.getDay();
   let startingCol = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
 
+  // Seamless cycle through the standard shift combinations requested by the user:
+  // 1. Sáng + Tối (1 công)
+  // 2. Sáng + Chiều (1 công)
+  // 3. Chiều + Tối (1 công)
+  // 4. Chỉ Sáng (0.5 công)
+  // 5. Chỉ Chiều (0.5 công)
+  // 6. Chỉ Tối (0.5 công)
+  // 7. Cả 3 ca (1.5 công)
+  // 8. Nghỉ (0 công)
   const cycleShift = (day: DaySalaryDetail) => {
     const { morning, afternoon, evening } = day.dayAttendance;
-    // Cycle pattern:
-    // None -> Sáng + Đêm (1 công) -> Chạy Sáng (0.5 công) -> Chạy Đêm (0.5 công) -> Sáng + Chiều (1 công) -> Cả 3 ca (1.5 công) -> Nghỉ
+
     if (!morning && !afternoon && !evening) {
-      onUpdateDay(day.dayAttendance.date, { morning: true, afternoon: false, evening: true, note: 'Ca gãy: Sáng + Đêm (1 công)' });
+      // 1. Sáng + Tối
+      onUpdateDay(day.dayAttendance.date, {
+        morning: true,
+        afternoon: false,
+        evening: true,
+        note: 'Ca gãy: Sáng + Tối (1 công)',
+      });
     } else if (morning && !afternoon && evening) {
-      onUpdateDay(day.dayAttendance.date, { morning: true, afternoon: false, evening: false, note: 'Chạy ca sáng (0.5 công)' });
-    } else if (morning && !afternoon && !evening) {
-      onUpdateDay(day.dayAttendance.date, { morning: false, afternoon: false, evening: true, note: 'Chạy ca đêm (0.5 công)' });
-    } else if (!morning && !afternoon && evening) {
-      onUpdateDay(day.dayAttendance.date, { morning: true, afternoon: true, evening: false, note: 'Ca liền: Sáng + Chiều (1 công)' });
+      // 2. Sáng + Chiều
+      onUpdateDay(day.dayAttendance.date, {
+        morning: true,
+        afternoon: true,
+        evening: false,
+        note: 'Ca liền: Sáng + Chiều (1 công)',
+      });
     } else if (morning && afternoon && !evening) {
-      onUpdateDay(day.dayAttendance.date, { morning: true, afternoon: true, evening: true, note: 'Cả 3 ca (1.5 công)' });
+      // 3. Chiều + Tối
+      onUpdateDay(day.dayAttendance.date, {
+        morning: false,
+        afternoon: true,
+        evening: true,
+        note: 'Ca chiều tối: Chiều + Tối (1 công)',
+      });
+    } else if (!morning && afternoon && evening) {
+      // 4. Chỉ Sáng
+      onUpdateDay(day.dayAttendance.date, {
+        morning: true,
+        afternoon: false,
+        evening: false,
+        note: 'Chỉ làm ca Sáng (0.5 công)',
+      });
+    } else if (morning && !afternoon && !evening) {
+      // 5. Chỉ Chiều
+      onUpdateDay(day.dayAttendance.date, {
+        morning: false,
+        afternoon: true,
+        evening: false,
+        note: 'Chỉ làm ca Chiều (0.5 công)',
+      });
+    } else if (!morning && afternoon && !evening) {
+      // 6. Chỉ Tối
+      onUpdateDay(day.dayAttendance.date, {
+        morning: false,
+        afternoon: false,
+        evening: true,
+        note: 'Chỉ làm ca Tối (0.5 công)',
+      });
+    } else if (!morning && !afternoon && evening) {
+      // 7. Cả 3 ca
+      onUpdateDay(day.dayAttendance.date, {
+        morning: true,
+        afternoon: true,
+        evening: true,
+        note: 'Làm cả 3 ca (1.5 công)',
+      });
     } else {
-      onUpdateDay(day.dayAttendance.date, { morning: false, afternoon: false, evening: false, note: '' });
+      // 8. Nghỉ
+      onUpdateDay(day.dayAttendance.date, {
+        morning: false,
+        afternoon: false,
+        evening: false,
+        note: '',
+      });
     }
   };
 
@@ -67,27 +128,27 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-base font-bold text-white">
-              Lịch Làm Việc & Ca Gãy Tháng {month}/{year}
+              Lịch Chấm Công Tháng {month}/{year}
             </h3>
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-700/50">
-              {summary.projectedStandardDays} công chuẩn ({summary.projectedTotalShifts} ca)
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-950 text-indigo-300 border border-indigo-700/60">
+              {summary.projectedStandardDays} công ({summary.projectedTotalShifts} ca)
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Bấm vào ô ngày để chuyển nhanh (Sáng+Đêm: 1 công ➔ Chạy Sáng: 0.5 công ➔ Chạy Đêm: 0.5 công ➔ 3 ca ➔ Nghỉ).
+            Bấm nhanh vào ô ngày để chuyển đổi ca (Sáng+Tối ➔ Sáng+Chiều ➔ Chiều+Tối ➔ Chỉ Sáng ➔ Chỉ Chiều ➔ Chỉ Tối ➔ 3 ca ➔ Nghỉ).
           </p>
         </div>
 
         {/* Legend */}
         <div className="flex items-center gap-1.5 flex-wrap text-xs">
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-950/40 text-amber-300 border border-amber-800/50">
-            <Sun className="w-3 h-3 text-amber-400" /> Sáng (0.5 công)
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-950/70 text-indigo-300 border border-indigo-800/60 font-medium">
+            <Zap className="w-3 h-3 text-indigo-400" /> 2 ca = 1.0 công
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-indigo-950/40 text-indigo-300 border border-indigo-800/50">
-            <Moon className="w-3 h-3 text-indigo-400" /> Đêm (0.5 công)
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 font-medium">
+            <Sun className="w-3 h-3 text-amber-400" /> 1 ca = 0.5 công
           </span>
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-950/50 text-purple-300 border border-purple-800/60 font-bold">
-            <Zap className="w-3 h-3 text-purple-400" /> 2 ca = 1 công chuẩn
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-950/70 text-emerald-300 border border-emerald-800/60 font-medium">
+            <Layers className="w-3 h-3 text-emerald-400" /> 3 ca = 1.5 công
           </span>
         </div>
       </div>
@@ -102,10 +163,10 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
       </div>
 
       {/* Days Grid */}
-      <div className="grid grid-cols-7 divide-x divide-y divide-slate-800 bg-slate-950/30">
+      <div className="grid grid-cols-7 divide-x divide-y divide-slate-800 bg-slate-950/20">
         {/* Leading empty cells */}
         {Array.from({ length: startingCol }).map((_, i) => (
-          <div key={`empty-${i}`} className="min-h-[105px] sm:min-h-[125px] bg-[#0B0D11]/60 p-2 opacity-30" />
+          <div key={`empty-${i}`} className="min-h-[105px] sm:min-h-[125px] bg-[#0B0F17]/60 p-2 opacity-30" />
         ))}
 
         {/* Month Day Cells */}
@@ -116,17 +177,48 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
           const hasWorked = detail.totalShifts > 0;
           const dayStandardDays = Number((detail.totalShifts / shiftsPerStandard).toFixed(1));
 
+          const m = day.morning;
+          const a = day.afternoon;
+          const e = day.evening;
+
+          // Shift Label Description
+          let shiftLabel = 'Nghỉ';
+          let shiftBadgeStyle = 'text-slate-500 bg-slate-900/50 border-slate-800';
+
+          if (m && !a && e) {
+            shiftLabel = 'Sáng + Tối';
+            shiftBadgeStyle = 'text-indigo-300 bg-indigo-950/80 border-indigo-800/60 font-semibold';
+          } else if (m && a && !e) {
+            shiftLabel = 'Sáng + Chiều';
+            shiftBadgeStyle = 'text-indigo-300 bg-indigo-950/80 border-indigo-800/60 font-semibold';
+          } else if (!m && a && e) {
+            shiftLabel = 'Chiều + Tối';
+            shiftBadgeStyle = 'text-indigo-300 bg-indigo-950/80 border-indigo-800/60 font-semibold';
+          } else if (m && a && e) {
+            shiftLabel = 'Cả 3 ca';
+            shiftBadgeStyle = 'text-emerald-300 bg-emerald-950/80 border-emerald-800/60 font-bold';
+          } else if (m && !a && !e) {
+            shiftLabel = 'Chỉ Sáng';
+            shiftBadgeStyle = 'text-amber-300 bg-amber-950/60 border-amber-800/50';
+          } else if (!m && a && !e) {
+            shiftLabel = 'Chỉ Chiều';
+            shiftBadgeStyle = 'text-orange-300 bg-orange-950/60 border-orange-800/50';
+          } else if (!m && !a && e) {
+            shiftLabel = 'Chỉ Tối';
+            shiftBadgeStyle = 'text-indigo-300 bg-indigo-950/60 border-indigo-800/50';
+          }
+
           return (
             <div
               key={day.date}
               className={`min-h-[105px] sm:min-h-[125px] p-2 flex flex-col justify-between transition-all group relative border-b border-r border-slate-800 ${
                 isToday
-                  ? 'bg-indigo-950/40 ring-2 ring-indigo-500/50 ring-inset z-10'
+                  ? 'bg-indigo-950/30 ring-2 ring-indigo-500/60 ring-inset z-10'
                   : hasWorked
-                  ? 'bg-[#111827] hover:bg-slate-800/50'
+                  ? 'bg-[#111827] hover:bg-slate-800/40'
                   : isSunday
-                  ? 'bg-slate-900/40'
-                  : 'bg-[#111827]/80 hover:bg-slate-800/40'
+                  ? 'bg-slate-900/30 hover:bg-slate-850'
+                  : 'bg-[#111827]/80 hover:bg-slate-800/30'
               }`}
             >
               {/* Day Top Bar */}
@@ -137,104 +229,79 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                       isToday
                         ? 'bg-indigo-600 text-white shadow-xs'
                         : isSunday
-                        ? 'text-rose-400'
-                        : 'text-slate-200'
+                        ? 'text-rose-400 font-semibold'
+                        : 'text-slate-300'
                     }`}
                   >
-                    {detail.dayNumber}
+                    {detail.dayOfMonth}
                   </span>
-                  {day.isHoliday && (
-                    <span className="text-[10px] font-bold text-rose-300 bg-rose-950/60 border border-rose-800/50 px-1 rounded">
-                      Lễ
+                  {isToday && (
+                    <span className="hidden sm:inline text-[9px] px-1 rounded bg-indigo-900 text-indigo-200">
+                      Nay
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center gap-1">
-                  {hasWorked && (
-                    <span
-                      className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded border ${
-                        detail.totalShifts >= 2
-                          ? 'bg-purple-950/80 text-purple-300 border-purple-800/60'
-                          : 'bg-amber-950/80 text-amber-300 border-amber-800/60'
-                      }`}
-                    >
-                      {dayStandardDays} công
-                    </span>
-                  )}
-                  {/* Edit details button */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenDayDetail(detail);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-opacity"
-                    title="Chỉnh sửa chi tiết"
-                  >
-                    <Info className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                {/* Edit details pencil button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenDayDetail(detail);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-all"
+                  title="Chỉnh sửa chi tiết (OT, ghi chú)"
+                >
+                  <Edit2 className="w-3 h-3" />
+                </button>
               </div>
 
-              {/* Center: Shift badges */}
+              {/* Day Body: Clickable to Cycle Shift */}
               <div
                 onClick={() => cycleShift(detail)}
-                className="my-1.5 cursor-pointer select-none flex-1 flex flex-col justify-center space-y-1"
-                title="Bấm để đổi ca"
+                className="my-1.5 cursor-pointer select-none space-y-1"
+                title="Bấm để chuyển ca"
               >
-                {hasWorked ? (
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-1 flex-wrap">
-                      {day.morning && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-950/50 text-amber-300 border border-amber-800/50">
-                          <Sun className="w-2.5 h-2.5 text-amber-400" /> Sáng
-                        </span>
-                      )}
-                      {day.afternoon && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-950/50 text-orange-300 border border-orange-800/50">
-                          <Sunset className="w-2.5 h-2.5 text-orange-400" /> Chiều
-                        </span>
-                      )}
-                      {day.evening && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-950/50 text-indigo-300 border border-indigo-800/50">
-                          <Moon className="w-2.5 h-2.5 text-indigo-400" /> Đêm/Tối
-                        </span>
-                      )}
-                    </div>
+                {/* Shift Label Badge */}
+                <div className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md border text-center truncate ${shiftBadgeStyle}`}>
+                  {shiftLabel}
+                </div>
 
-                    {detail.isSplitShift ? (
-                      <div className="text-[10px] font-bold text-purple-300 flex items-center gap-0.5">
-                        <Zap className="w-2.5 h-2.5 text-purple-400" />
-                        <span>Ca gãy (1 công)</span>
-                      </div>
-                    ) : (
-                      <div className="text-[10px] font-medium text-amber-400">
-                        Nửa công (0.5)
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-[11px] text-slate-600 italic text-center py-2 group-hover:text-slate-400">
-                    + Chấm ca
+                {/* Shift Icons Indicator */}
+                <div className="flex items-center justify-center gap-1 text-[10px]">
+                  {m && (
+                    <span className="p-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40" title="Ca Sáng">
+                      <Sun className="w-2.5 h-2.5" />
+                    </span>
+                  )}
+                  {a && (
+                    <span className="p-0.5 rounded bg-orange-950/60 text-orange-400 border border-orange-800/40" title="Ca Chiều">
+                      <Sunset className="w-2.5 h-2.5" />
+                    </span>
+                  )}
+                  {e && (
+                    <span className="p-0.5 rounded bg-indigo-950/60 text-indigo-400 border border-indigo-800/40" title="Ca Tối">
+                      <Moon className="w-2.5 h-2.5" />
+                    </span>
+                  )}
+                  {!hasWorked && (
+                    <span className="text-slate-600 text-[10px]">-</span>
+                  )}
+                </div>
+
+                {/* Overtime indicator if present */}
+                {(day.overtimeHours || 0) > 0 && (
+                  <div className="text-[10px] text-center font-semibold text-amber-400 bg-amber-950/40 rounded px-1 border border-amber-900/40">
+                    +{day.overtimeHours}h OT
                   </div>
                 )}
               </div>
 
-              {/* Day Bottom: Pay & OT */}
-              <div className="pt-1 border-t border-slate-800 flex items-center justify-between text-[11px]">
-                {detail.totalDayEarnings > 0 ? (
-                  <span className="font-bold text-indigo-400 font-mono">
-                    {formatVND(detail.totalDayEarnings)}
-                  </span>
-                ) : (
-                  <span className="text-slate-500">Nghỉ</span>
-                )}
-
-                {day.overtimeHours > 0 && (
-                  <span className="text-amber-400 font-medium text-[10px]">
-                    +{day.overtimeHours}h OT
-                  </span>
-                )}
+              {/* Day Bottom: Công & Thu nhập ngày */}
+              <div className="flex items-center justify-between text-[10px] pt-1 border-t border-slate-800/60 text-slate-400">
+                <span>{hasWorked ? `${dayStandardDays} công` : '0 công'}</span>
+                <span className={`font-mono font-medium ${hasWorked ? 'text-emerald-400' : 'text-slate-600'}`}>
+                  {hasWorked ? formatVND(detail.totalDayEarnings) : '0 ₫'}
+                </span>
               </div>
             </div>
           );

@@ -37,9 +37,9 @@ export const SalarySettingsView: React.FC<SalarySettingsViewProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Live Simulator state (What-if scenario)
-  const [simSplitDays, setSimSplitDays] = useState<number>(24); // 24 ngày ca gãy (48 ca)
-  const [simSingleShifts, setSimSingleShifts] = useState<number>(2); // 2 ca đơn lẻ
-  const [simOtHours, setSimOtHours] = useState<number>(6); // 6h tăng ca
+  const [simSplitDays, setSimSplitDays] = useState<number>(28); // 28 ngày làm full 2 ca (56 ca = 10tr)
+  const [simSingleShifts, setSimSingleShifts] = useState<number>(0); // 0 ca đơn lẻ
+  const [simOtHours, setSimOtHours] = useState<number>(0); // 0h tăng ca
 
   // Calculate live simulator values
   const totalSimShifts = simSplitDays * (formData.standardShiftsPerDay || 2) + simSingleShifts;
@@ -48,7 +48,7 @@ export const SalarySettingsView: React.FC<SalarySettingsViewProps> = ({
   // Base shift rate
   const simShiftRate =
     formData.calculationMode === 'monthly_based'
-      ? formData.baseSalary / (formData.standardDaysInMonth * (formData.standardShiftsPerDay || 2))
+      ? formData.baseSalary / ((formData.standardDaysInMonth || 28) * (formData.standardShiftsPerDay || 2))
       : formData.ratePerShift;
 
   const simSplitDayRate = simShiftRate * (formData.standardShiftsPerDay || 2);
@@ -57,7 +57,7 @@ export const SalarySettingsView: React.FC<SalarySettingsViewProps> = ({
   const simBaseSalary = totalSimShifts * simShiftRate;
 
   // Overtime earnings
-  const simOtSalary = simOtHours * (formData.overtimeRatePerHour || 40000);
+  const simOtSalary = simOtHours * (formData.overtimeRatePerHour || 44643);
 
   // Meal allowance
   const simMealAllowance =
@@ -71,7 +71,7 @@ export const SalarySettingsView: React.FC<SalarySettingsViewProps> = ({
   const simFixedAllowances = (formData.travelAllowance || 0) + (formData.phoneAllowance || 0);
 
   // Attendance bonus
-  const hasEarnedAttendance = totalSimStandardDays >= (formData.attendanceRequiredDays || 24);
+  const hasEarnedAttendance = totalSimStandardDays >= (formData.attendanceRequiredDays || 28);
   const simAttendanceBonus = hasEarnedAttendance ? (formData.attendanceBonus || 0) : 0;
 
   // Gross
@@ -99,84 +99,84 @@ export const SalarySettingsView: React.FC<SalarySettingsViewProps> = ({
         ...prev,
         calculationMode: 'monthly_based',
         baseSalary: 10000000,
-        standardDaysInMonth: 26,
+        standardDaysInMonth: 28,
         standardShiftsPerDay: 2,
-        ratePerShift: 192308,
+        ratePerShift: 178571,
         eveningShiftMultiplier: 1.0,
         mealAllowancePerDayOrShift: 0,
         mealRule: 'none',
         travelAllowance: 0,
         phoneAllowance: 0,
         attendanceBonus: 0,
-        attendanceRequiredDays: 26,
+        attendanceRequiredDays: 28,
         insuranceDeduction: 0,
         monthlyAdvance: 0,
-        overtimeRatePerHour: 48077,
+        overtimeRatePerHour: 44643,
       }));
     } else if (presetType === 'driver') {
       setFormData((prev) => ({
         ...prev,
         calculationMode: 'monthly_based',
         baseSalary: 10000000,
-        standardDaysInMonth: 26,
+        standardDaysInMonth: 28,
         standardShiftsPerDay: 2,
-        ratePerShift: 192308,
-        eveningShiftMultiplier: 1.0, // Không phụ cấp ca đêm
+        ratePerShift: 178571,
+        eveningShiftMultiplier: 1.0,
         mealAllowancePerDayOrShift: 0,
         mealRule: 'none',
         travelAllowance: 0,
         phoneAllowance: 0,
         attendanceBonus: 0,
-        attendanceRequiredDays: 26,
-        overtimeRatePerHour: 48077,
+        attendanceRequiredDays: 28,
+        overtimeRatePerHour: 44643,
       }));
     } else if (presetType === 'restaurant') {
       setFormData((prev) => ({
         ...prev,
         calculationMode: 'monthly_based',
         baseSalary: 10000000,
-        standardDaysInMonth: 26,
+        standardDaysInMonth: 28,
         standardShiftsPerDay: 2,
-        ratePerShift: 192308,
+        ratePerShift: 178571,
         eveningShiftMultiplier: 1.0,
         mealAllowancePerDayOrShift: 0,
         mealRule: 'none',
         attendanceBonus: 0,
-        attendanceRequiredDays: 26,
+        attendanceRequiredDays: 28,
         travelAllowance: 0,
-        overtimeRatePerHour: 48077,
+        overtimeRatePerHour: 44643,
       }));
     } else if (presetType === 'cafe') {
       setFormData((prev) => ({
         ...prev,
         calculationMode: 'monthly_based',
         baseSalary: 10000000,
-        standardDaysInMonth: 26,
+        standardDaysInMonth: 28,
         standardShiftsPerDay: 2,
-        ratePerShift: 192308,
+        ratePerShift: 178571,
         eveningShiftMultiplier: 1.0,
         mealAllowancePerDayOrShift: 0,
         mealRule: 'none',
         attendanceBonus: 0,
-        attendanceRequiredDays: 26,
-        overtimeRatePerHour: 48077,
+        attendanceRequiredDays: 28,
+        overtimeRatePerHour: 44643,
       }));
     } else if (presetType === 'hotel') {
       setFormData((prev) => ({
         ...prev,
         calculationMode: 'monthly_based',
         baseSalary: 10000000,
-        standardDaysInMonth: 26,
+        standardDaysInMonth: 28,
         standardShiftsPerDay: 2,
-        ratePerShift: 192308,
+        ratePerShift: 178571,
         eveningShiftMultiplier: 1.0,
         mealAllowancePerDayOrShift: 0,
         mealRule: 'none',
         attendanceBonus: 0,
-        attendanceRequiredDays: 26,
+        attendanceRequiredDays: 28,
         travelAllowance: 0,
         phoneAllowance: 0,
-        overtimeRatePerHour: 48077,
+        overtimeRatePerHour: 44643,
       }));
     }
   };
@@ -226,13 +226,13 @@ export const SalarySettingsView: React.FC<SalarySettingsViewProps> = ({
           onClick={() => handleApplyPreset('standard_10m')}
           className="px-3 py-1 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400 shadow-xs transition-colors flex items-center gap-1.5"
         >
-          <span>💎 Chuẩn 10 Triệu (Full 2 ca/ngày, không phụ cấp)</span>
+          <span>💎 Chuẩn 10 Triệu (28 ngày công, nghỉ 2 ngày, full 2 ca/ngày, không phụ cấp)</span>
         </button>
         <button
           onClick={() => handleApplyPreset('driver')}
           className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-800/60 shadow-xs transition-colors"
         >
-          🚗 Tài xế / Ca gãy (10tr - 2 ca/ngày)
+          🚗 Ca gãy 28 ngày công (10tr - 2 ca/ngày)
         </button>
         <button
           onClick={() => handleApplyPreset('restaurant')}
@@ -291,7 +291,7 @@ export const SalarySettingsView: React.FC<SalarySettingsViewProps> = ({
             />
             <div className="flex justify-between text-[10px] text-slate-500 font-mono">
               <span>0 ngày</span>
-              <span>24 ngày (Đạt CC)</span>
+              <span>28 ngày (10 Triệu)</span>
               <span>31 ngày</span>
             </div>
             <p className="text-[11px] text-slate-400">
@@ -456,7 +456,7 @@ export const SalarySettingsView: React.FC<SalarySettingsViewProps> = ({
                   <input
                     type="number"
                     value={formData.standardDaysInMonth}
-                    onChange={(e) => handleFieldChange('standardDaysInMonth', parseInt(e.target.value, 10) || 26)}
+                    onChange={(e) => handleFieldChange('standardDaysInMonth', parseInt(e.target.value, 10) || 28)}
                     className="w-full p-2.5 bg-[#0F172A] border border-slate-700 rounded-xl text-white font-mono"
                   />
                 </div>

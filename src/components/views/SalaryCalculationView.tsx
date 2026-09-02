@@ -43,7 +43,7 @@ export const SalaryCalculationView: React.FC<SalaryCalculationViewProps> = ({
   // Unit rate calculations
   const shiftRate =
     config.calculationMode === 'monthly_based'
-      ? config.baseSalary / (config.standardDaysInMonth * (config.standardShiftsPerDay || 2))
+      ? config.baseSalary / ((config.standardDaysInMonth || 28) * (config.standardShiftsPerDay || 2))
       : config.ratePerShift;
 
   const splitShiftDayRate = shiftRate * (config.standardShiftsPerDay || 2);
@@ -51,7 +51,7 @@ export const SalaryCalculationView: React.FC<SalaryCalculationViewProps> = ({
   // Progress for attendance bonus
   const attendanceProgress = Math.min(
     100,
-    Math.round((summary.projectedStandardDays / (config.attendanceRequiredDays || 24)) * 100)
+    Math.round((summary.projectedStandardDays / (config.attendanceRequiredDays || 28)) * 100)
   );
 
   const handleCopyTextSlip = () => {
@@ -143,11 +143,11 @@ CÁC KHOẢN GIẢM TRỪ:
               <Sparkles className="w-4 h-4" />
             </span>
             <h3 className="text-base font-bold text-white">
-              Cơ Chế Tính Lương: 10.000.000 ₫ / Tháng (Làm Full 2 Ca/Ngày, Không Phụ Cấp)
+              Cơ Chế Tính Lương: 10.000.000 ₫ / Tháng (Tính trên 28 ngày công, tháng nghỉ 2 ngày, full 2 ca/ngày, không phụ cấp)
             </h3>
           </div>
           <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-950 text-emerald-300 border border-emerald-800/50">
-            {formatVND(config.baseSalary)} / {config.standardDaysInMonth} công chuẩn
+            {formatVND(config.baseSalary)} / {config.standardDaysInMonth || 28} công chuẩn
           </span>
         </div>
 
@@ -155,7 +155,7 @@ CÁC KHOẢN GIẢM TRỪ:
           <div className="bg-[#0F172A] p-3 rounded-xl border border-slate-800">
             <div className="text-slate-400">1. Quy đổi ca & công:</div>
             <div className="text-sm font-bold text-white mt-1">2 ca/ngày = 1 công chuẩn</div>
-            <div className="text-[11px] text-slate-400 mt-0.5">1 ca đơn lẻ = 0.5 công (nửa ngày)</div>
+            <div className="text-[11px] text-slate-400 mt-0.5">1 ca = 0.5 công | 28 ngày công = 56 ca</div>
           </div>
 
           <div className="bg-[#0F172A] p-3 rounded-xl border border-slate-800">
@@ -164,7 +164,7 @@ CÁC KHOẢN GIẢM TRỪ:
               {formatVND(shiftRate)}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
-              10.000.000 ₫ ÷ ({config.standardDaysInMonth} công × 2 ca)
+              10.000.000 ₫ ÷ ({config.standardDaysInMonth || 28} công × 2 ca)
             </div>
           </div>
 
@@ -174,14 +174,14 @@ CÁC KHOẢN GIẢM TRỪ:
               {formatVND(splitShiftDayRate)}
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
-              10.000.000 ₫ ÷ {config.standardDaysInMonth} ngày công chuẩn
+              10.000.000 ₫ ÷ {config.standardDaysInMonth || 28} ngày công chuẩn
             </div>
           </div>
 
           <div className="bg-[#0F172A] p-3 rounded-xl border border-slate-800">
-            <div className="text-slate-400">4. Phụ cấp kèm theo:</div>
-            <div className="text-sm font-bold text-amber-300 mt-1">0 ₫ (Không phụ cấp)</div>
-            <div className="text-[11px] text-slate-400 mt-0.5">Không tiền ăn, xăng xe, điện thoại</div>
+            <div className="text-slate-400">4. Quy chuẩn ngày nghỉ & phụ cấp:</div>
+            <div className="text-sm font-bold text-amber-300 mt-1">Nghỉ 2 ngày/tháng • 0 ₫ PC</div>
+            <div className="text-[11px] text-slate-400 mt-0.5">Tháng 30 hay 31 ngày đều tính trên 28 công</div>
           </div>
         </div>
 
@@ -193,7 +193,7 @@ CÁC KHOẢN GIẢM TRỪ:
             </span>
           </div>
           <div className="text-emerald-300 font-semibold shrink-0">
-            Làm đủ {config.standardDaysInMonth * 2} ca = Đúng {formatVND(config.baseSalary)}
+            Làm đủ {(config.standardDaysInMonth || 28) * 2} ca (28 công) = Đúng {formatVND(config.baseSalary)}
           </div>
         </div>
       </div>

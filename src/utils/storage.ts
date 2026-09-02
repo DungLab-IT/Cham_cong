@@ -10,22 +10,22 @@ export const DEFAULT_SALARY_CONFIG: SalaryConfig = {
   workplace: 'Chi nhánh / Doanh nghiệp',
   calculationMode: 'monthly_based',
   baseSalary: 10000000, // 10,000,000 VND / tháng (Làm full 2 ca/ngày)
-  standardDaysInMonth: 26, // 26 ngày công chuẩn (26 ngày x 2 ca = 52 ca)
+  standardDaysInMonth: 28, // 28 ngày công chuẩn (28 ngày x 2 ca = 56 ca) - Cố định mọi tháng kể cả 31 ngày, tháng nghỉ 2 ngày
   standardShiftsPerDay: 2, // 2 ca/ngày = 1 công chuẩn (1 ca = 0.5 công)
-  ratePerShift: 192308, // 10,000,000 / (26 * 2) = 192,308 VND / ca
+  ratePerShift: 178571, // 10,000,000 / (28 * 2) = 178,571 VND / ca
   hoursPerShift: {
     morning: 4,
     afternoon: 4,
     evening: 4,
   },
   eveningShiftMultiplier: 1.0, // 1.0 = Không phụ cấp thêm ca tối
-  overtimeRatePerHour: 48077, // 10,000,000 / 26 / 8 = 48,077 VND / giờ tăng ca
+  overtimeRatePerHour: 44643, // 10,000,000 / 28 / 8 = 44,643 VND / giờ tăng ca
   mealAllowancePerDayOrShift: 0, // 0 đồng (Không phụ cấp tiền ăn)
   mealRule: 'none', // Không phụ cấp ăn
   travelAllowance: 0, // 0 đồng (Không phụ cấp xăng xe)
   phoneAllowance: 0, // 0 đồng (Không phụ cấp điện thoại)
   attendanceBonus: 0, // 0 đồng (Không phụ cấp chuyên cần)
-  attendanceRequiredDays: 26,
+  attendanceRequiredDays: 28, // Đủ 28 ngày công chuẩn
   insuranceDeduction: 0, // Khấu trừ bảo hiểm nếu có
   monthlyAdvance: 0, // Tạm ứng
 };
@@ -46,20 +46,19 @@ export function generateSampleMonthData(monthKey: string): Record<string, DayAtt
   const isThisMonth = monthKey === currentMonthKey;
   const maxFillDay = isThisMonth ? Math.min(totalDays, currentDayNum + 3) : totalDays;
 
-  // Patterns of split shifts:
-  // 1: Sáng + Tối (morning + evening)
+  // Patterns of split shifts (Month with 28 standard working days, 2 days off e.g. day 15 and day 28/last day):
+  // 1: Sáng + Tối (morning + evening) - phổ biến nhất
   // 2: Sáng + Chiều (morning + afternoon)
   // 3: Chiều + Tối (afternoon + evening)
-  // 4: Sáng only
-  // 5: Nghỉ (Sunday)
   for (let d = 1; d <= maxFillDay; d++) {
     const dayStr = d < 10 ? `0${d}` : `${d}`;
     const dateKey = `${monthKey}-${dayStr}`;
     const dateObj = new Date(year, month - 1, d);
-    const dayOfWeek = dateObj.getDay(); // 0 = CN, 1 = T2, ...
 
-    if (dayOfWeek === 0) {
-      // Chủ nhật nghỉ hoặc ca nhẹ
+    // 2 ngày nghỉ trong tháng (ngày 15 và ngày cuối tháng / ngày 28)
+    const isOffDay = d === 15 || d === 28;
+
+    if (isOffDay) {
       records[dateKey] = {
         date: dateKey,
         morning: false,
@@ -68,19 +67,19 @@ export function generateSampleMonthData(monthKey: string): Record<string, DayAtt
         overtimeHours: 0,
         dailyBonus: 0,
         dailyDeduction: 0,
-        note: 'Nghỉ Chủ Nhật',
+        note: 'Nghỉ định kỳ (Tháng nghỉ 2 ngày)',
       };
     } else if (d % 3 === 1) {
-      // Ca gãy Sáng + Tối (rất phổ biến cho nhà hàng / dịch vụ)
+      // Ca gãy Sáng + Tối
       records[dateKey] = {
         date: dateKey,
         morning: true,
         afternoon: false,
         evening: true,
-        overtimeHours: d % 5 === 0 ? 1.5 : 0,
-        dailyBonus: d % 7 === 0 ? 50000 : 0,
+        overtimeHours: d % 7 === 0 ? 1.5 : 0,
+        dailyBonus: 0,
         dailyDeduction: 0,
-        note: d % 5 === 0 ? 'Tăng ca đóng cửa 1.5h' : 'Ca gãy: Sáng + Tối',
+        note: d % 7 === 0 ? 'Tăng ca đóng cửa 1.5h' : 'Ca gãy: Sáng + Tối',
       };
     } else if (d % 3 === 2) {
       // Ca Sáng + Chiều
@@ -95,7 +94,7 @@ export function generateSampleMonthData(monthKey: string): Record<string, DayAtt
         note: 'Ca liền: Sáng + Chiều',
       };
     } else {
-      // Ca gãy Chiều + Tối
+      // Ca Chiều + Tối
       records[dateKey] = {
         date: dateKey,
         morning: false,
@@ -117,22 +116,28 @@ export function loadSalaryConfig(): SalaryConfig {
     const raw = localStorage.getItem(STORAGE_KEYS.SALARY_CONFIG);
     if (!raw) return DEFAULT_SALARY_CONFIG;
     const parsed = JSON.parse(raw);
-    // If saved config was using older default salary (8M, 7.5M, 8.5M) or old allowances, migrate to 10M 0 allowances
+    
+    // Auto-upgrade / migrate config if using old 26-day standard or older salary amounts
     if (
+      parsed.standardDaysInMonth === 26 ||
+      !parsed.standardDaysInMonth ||
       parsed.baseSalary === 8000000 ||
       parsed.baseSalary === 7500000 ||
       parsed.baseSalary === 8500000 ||
       !parsed.baseSalary
     ) {
       parsed.baseSalary = 10000000;
+      parsed.standardDaysInMonth = 28;
+      parsed.ratePerShift = 178571;
+      parsed.overtimeRatePerHour = 44643;
+      parsed.attendanceRequiredDays = 28;
+      parsed.standardShiftsPerDay = 2;
       parsed.mealAllowancePerDayOrShift = 0;
       parsed.mealRule = 'none';
       parsed.travelAllowance = 0;
       parsed.phoneAllowance = 0;
       parsed.attendanceBonus = 0;
       parsed.eveningShiftMultiplier = 1.0;
-      parsed.standardDaysInMonth = parsed.standardDaysInMonth || 26;
-      parsed.standardShiftsPerDay = 2;
     }
     return { ...DEFAULT_SALARY_CONFIG, ...parsed };
   } catch {

@@ -30,7 +30,10 @@ export function getSingleShiftRate(config: SalaryConfig): number {
   }
   
   // monthly_based: baseSalary / (standardDaysInMonth * standardShiftsPerDay)
-  const totalStandardShifts = Math.max(1, config.standardDaysInMonth * config.standardShiftsPerDay);
+  // Cố định chuẩn 28 ngày công x 2 ca = 56 ca (kể cả tháng 30 hay 31 ngày)
+  const standardDays = config.standardDaysInMonth || 28;
+  const standardShifts = config.standardShiftsPerDay || 2;
+  const totalStandardShifts = Math.max(1, standardDays * standardShifts);
   return config.baseSalary / totalStandardShifts;
 }
 
@@ -248,7 +251,7 @@ export function calculateMonthSummary(
   const projectedStandardDays = Number((projectedTotalShifts / shiftsPerStandardDay).toFixed(2));
   
   // Check attendance bonus eligibility
-  const hasEarnedAttendanceBonus = projectedStandardDays >= (config.attendanceRequiredDays || 26);
+  const hasEarnedAttendanceBonus = projectedStandardDays >= (config.attendanceRequiredDays || 28);
   const projectedAttendanceBonus = hasEarnedAttendanceBonus ? (config.attendanceBonus || 0) : 0;
   
   // Fixed monthly allowances (Travel, phone)

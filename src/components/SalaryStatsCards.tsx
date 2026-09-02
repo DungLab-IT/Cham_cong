@@ -3,7 +3,6 @@ import {
   Wallet,
   TrendingUp,
   Clock,
-  Utensils,
   CheckCircle2,
   CalendarDays,
   Zap,
@@ -28,44 +27,45 @@ export const SalaryStatsCards: React.FC<SalaryStatsCardsProps> = ({
 }) => {
   const [_, monthStr] = summary.monthKey.split('-');
   const todayNum = new Date().getDate();
-  const isCurrentMonth = summary.monthKey === `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const isCurrentMonth =
+    summary.monthKey ===
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
   // Progress percentage
-  const progressPercent = summary.projectedNetSalary > 0
-    ? Math.min(100, Math.round((summary.accumulatedNetSalary / summary.projectedNetSalary) * 100))
-    : 0;
+  const progressPercent =
+    summary.projectedNetSalary > 0
+      ? Math.min(100, Math.round((summary.accumulatedNetSalary / summary.projectedNetSalary) * 100))
+      : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* Card 1: Lương tính đến hôm nay (PRIMARY HERO) */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-950 via-[#111827] to-[#0F172A] text-white rounded-2xl p-5 shadow-lg border border-indigo-500/30 flex flex-col justify-between">
-        <div className="absolute top-0 right-0 -mr-6 -mt-6 w-28 h-28 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-        
+      {/* Card 1: Lương tích lũy đến hiện tại */}
+      <div className="bg-[#111827] text-white rounded-2xl p-5 shadow-xs border border-slate-800 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-900/60 text-indigo-200 border border-indigo-500/40">
-              <Zap className="w-3 h-3 text-amber-300" />
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-950 text-indigo-300 border border-indigo-800/60">
+              <Zap className="w-3 h-3 text-amber-400" />
               {isCurrentMonth ? `Đến hôm nay (${todayNum}/${monthStr})` : 'Lũy kế thực tế'}
             </span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center text-indigo-300">
+            <div className="w-8 h-8 rounded-lg bg-indigo-950 text-indigo-400 border border-indigo-800/50 flex items-center justify-center">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
 
           <p className="text-xs text-slate-400 font-medium mt-3">Lương tích lũy đến hiện tại</p>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mt-1 font-mono">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1 font-mono">
             {formatVND(summary.accumulatedNetSalary)}
           </h2>
         </div>
 
-        <div className="pt-4 mt-3 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+        <div className="pt-3.5 mt-3 border-t border-slate-800 text-xs text-slate-400 flex items-center justify-between">
           <div>
             <span>Đã làm: </span>
             <strong className="text-white font-semibold">{summary.workedStandardDays} công</strong>
             <span className="text-slate-400"> ({summary.workedTotalShifts} ca)</span>
           </div>
           {summary.workedOvertimeHours > 0 && (
-            <span className="text-amber-400 font-medium">+{summary.workedOvertimeHours}h tăng ca</span>
+            <span className="text-amber-400 font-medium">+{summary.workedOvertimeHours}h OT</span>
           )}
         </div>
       </div>
@@ -74,11 +74,11 @@ export const SalaryStatsCards: React.FC<SalaryStatsCardsProps> = ({
       <div className="bg-[#111827] rounded-2xl p-5 shadow-xs border border-slate-800 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-950/50 text-emerald-300 border border-emerald-800/50">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800/60">
               <TrendingUp className="w-3 h-3 text-emerald-400" />
               Cả tháng {monthStr}
             </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-950/40 text-emerald-400 border border-emerald-800/30 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-800/50 flex items-center justify-center">
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
@@ -92,63 +92,67 @@ export const SalaryStatsCards: React.FC<SalaryStatsCardsProps> = ({
         {/* Progress bar */}
         <div className="pt-3 mt-2 border-t border-slate-800">
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
-            <span>Tiến độ lương</span>
+            <span>Tiến độ hoàn thành</span>
             <span className="font-semibold text-indigo-400">{progressPercent}%</span>
           </div>
           <div className="w-full bg-[#0F172A] border border-slate-800 rounded-full h-2 overflow-hidden">
             <div
-              className="bg-indigo-500 h-2 rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]"
+              className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <p className="text-[11px] text-slate-500 mt-1.5 flex justify-between">
+          <p className="text-[11px] text-slate-400 mt-1.5 flex justify-between">
             <span>Kế hoạch: {summary.projectedStandardDays} công</span>
             <span>Chuẩn: {config.standardDaysInMonth} công</span>
           </p>
         </div>
       </div>
 
-      {/* Card 3: Chi tiết các ca làm */}
+      {/* Card 3: Thống kê ca làm việc */}
       <div className="bg-[#111827] rounded-2xl p-5 shadow-xs border border-slate-800 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-950/50 text-indigo-300 border border-indigo-800/50">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-950 text-indigo-300 border border-indigo-800/60">
               <Clock className="w-3 h-3 text-indigo-400" />
               Thống kê ca
             </span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-950/40 text-indigo-400 border border-indigo-800/30 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-indigo-950 text-indigo-400 border border-indigo-800/50 flex items-center justify-center">
               <CalendarDays className="w-4 h-4" />
             </div>
           </div>
 
           <p className="text-xs text-slate-400 font-medium mt-3">Tổng số ca đã chấm</p>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-bold text-indigo-400 font-mono">
+            <span className="text-2xl font-bold text-indigo-300 font-mono">
               {summary.projectedTotalShifts}
             </span>
-            <span className="text-xs text-slate-500">/ {config.standardDaysInMonth * (config.standardShiftsPerDay || 2)} ca chuẩn</span>
+            <span className="text-xs text-slate-400">
+              / {(config.standardDaysInMonth || 28) * 2} ca chuẩn
+            </span>
           </div>
         </div>
 
-        {/* Shift pills breakdown */}
+        {/* Shift breakdown */}
         <div className="pt-3 mt-2 border-t border-slate-800 grid grid-cols-3 gap-1.5 text-center">
-          <div className="bg-amber-950/30 rounded-lg p-1.5 border border-amber-800/40">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-amber-300">
-              <Sun className="w-3 h-3 text-amber-400" />
+          <div className="bg-[#0F172A] rounded-lg p-1.5 border border-slate-800">
+            <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-amber-400">
+              <Sun className="w-3 h-3" />
               Sáng
             </div>
             <p className="text-xs font-bold text-slate-200 mt-0.5">{summary.projectedMorningCount}</p>
           </div>
-          <div className="bg-orange-950/30 rounded-lg p-1.5 border border-orange-800/40">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-orange-300">
-              <Sunset className="w-3 h-3 text-orange-400" />
+
+          <div className="bg-[#0F172A] rounded-lg p-1.5 border border-slate-800">
+            <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-orange-400">
+              <Sunset className="w-3 h-3" />
               Chiều
             </div>
             <p className="text-xs font-bold text-slate-200 mt-0.5">{summary.projectedAfternoonCount}</p>
           </div>
-          <div className="bg-indigo-950/30 rounded-lg p-1.5 border border-indigo-800/40">
-            <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-indigo-300">
-              <Moon className="w-3 h-3 text-indigo-400" />
+
+          <div className="bg-[#0F172A] rounded-lg p-1.5 border border-slate-800">
+            <div className="flex items-center justify-center gap-1 text-[11px] font-medium text-indigo-400">
+              <Moon className="w-3 h-3" />
               Tối
             </div>
             <p className="text-xs font-bold text-slate-200 mt-0.5">{summary.projectedEveningCount}</p>
@@ -156,50 +160,33 @@ export const SalaryStatsCards: React.FC<SalaryStatsCardsProps> = ({
         </div>
       </div>
 
-      {/* Card 4: Phụ cấp & Thưởng */}
+      {/* Card 4: Cơ chế & Đơn giá ca */}
       <div className="bg-[#111827] rounded-2xl p-5 shadow-xs border border-slate-800 flex flex-col justify-between">
         <div>
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-950/50 text-amber-300 border border-amber-800/50">
-              <Utensils className="w-3 h-3 text-amber-400" />
-              Phụ cấp & Thưởng
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              Đơn giá ca & ngày
             </span>
-            <div className="w-8 h-8 rounded-lg bg-amber-950/40 text-amber-400 border border-amber-800/30 flex items-center justify-center">
-              <Utensils className="w-4 h-4" />
-            </div>
           </div>
 
-          <p className="text-xs text-slate-400 font-medium mt-3">Tiền ăn & phụ cấp khác</p>
-          <h3 className="text-2xl font-bold tracking-tight text-amber-400 mt-1 font-mono">
-            {formatVND(
-              summary.projectedMealAllowance +
-              summary.projectedFixedAllowances +
-              summary.projectedAttendanceBonus +
-              summary.projectedOvertimeSalary
-            )}
+          <p className="text-xs text-slate-400 font-medium mt-3">Đơn giá 1 ca (0.5 công)</p>
+          <h3 className="text-2xl font-bold tracking-tight text-white mt-1 font-mono">
+            {formatVND(Math.round(config.baseSalary / ((config.standardDaysInMonth || 28) * 2)))}
           </h3>
         </div>
 
-        <div className="pt-3 mt-2 border-t border-slate-800 space-y-1 text-xs text-slate-400">
+        <div className="pt-3 mt-2 border-t border-slate-800 text-xs text-slate-400 space-y-1">
           <div className="flex justify-between">
-            <span>Tiền ăn ca:</span>
-            <span className="font-semibold text-slate-200 font-mono">{formatVND(summary.projectedMealAllowance)}</span>
+            <span>Ngày làm 2 ca (1 công):</span>
+            <span className="font-semibold text-emerald-400 font-mono">
+              {formatVND(Math.round((config.baseSalary / (config.standardDaysInMonth || 28))))}
+            </span>
           </div>
-          {summary.projectedAttendanceBonus > 0 && (
-            <div className="flex justify-between text-emerald-400">
-              <span className="flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                Chuyên cần:
-              </span>
-              <span className="font-semibold font-mono">+{formatVND(summary.projectedAttendanceBonus)}</span>
-            </div>
-          )}
-          {summary.projectedOvertimeSalary > 0 && (
-            <div className="flex justify-between text-amber-400">
-              <span>Lương tăng ca:</span>
-              <span className="font-semibold font-mono">+{formatVND(summary.projectedOvertimeSalary)}</span>
-            </div>
-          )}
+          <div className="flex justify-between">
+            <span>Phụ cấp:</span>
+            <span className="font-medium text-slate-400 font-mono">0 ₫ (Không phụ cấp)</span>
+          </div>
         </div>
       </div>
     </div>
