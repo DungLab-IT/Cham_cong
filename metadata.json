@@ -1,0 +1,6 @@
+{
+  "name": "Chấm Công Ca Gãy & Tính Lương",
+  "description": "Hệ thống chấm công 3 ca (sáng, chiều, tối) chuyên biệt cho ca gãy, tự động tính lương lũy kế đến ngày hiện tại, lương dự kiến cả tháng và xuất bảng tính Excel/Sheet.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
