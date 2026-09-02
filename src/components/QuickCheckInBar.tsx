@@ -22,46 +22,47 @@ import { getVietnamTodayStr } from '../utils/vietnamTime';
 
 interface QuickCheckInBarProps {
   todayStr: string; // YYYY-MM-DD
-  todayAttendance: DayAttendance | undefined;
+  attendances: Record<string, DayAttendance>;
   onUpdateDay: (date: string, updates: Partial<DayAttendance>) => void;
   config: SalaryConfig;
 }
 
 export const QuickCheckInBar: React.FC<QuickCheckInBarProps> = ({
   todayStr,
-  todayAttendance,
+  attendances,
   onUpdateDay,
   config,
 }) => {
-  // Allow user to toggle between Today, Yesterday, or pick a date
+  // Allow user to toggle between Today, Tomorrow, Yesterday, or pick any date (e.g. 03/09)
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
 
   const isSelectedToday = selectedDate === todayStr;
   
-  // Calculate relative date helpers
+  // Safe date arithmetic without timezone shift
   const changeDateByOffset = (offsetDays: number) => {
     try {
-      const d = new Date(selectedDate);
-      d.setDate(d.getDate() + offsetDays);
-      const newStr = d.toISOString().split('T')[0];
-      setSelectedDate(newStr);
+      const [y, m, d] = selectedDate.split('-').map(Number);
+      const targetDate = new Date(y, m - 1, d + offsetDays);
+      const yStr = targetDate.getFullYear();
+      const mStr = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const dStr = String(targetDate.getDate()).padStart(2, '0');
+      setSelectedDate(`${yStr}-${mStr}-${dStr}`);
     } catch {
       // fallback
     }
   };
 
-  const currentAttendance: DayAttendance = todayAttendance && selectedDate === todayStr
-    ? todayAttendance
-    : {
-        date: selectedDate,
-        morning: false,
-        afternoon: false,
-        evening: false,
-        overtimeHours: 0,
-        dailyBonus: 0,
-        dailyDeduction: 0,
-        note: '',
-      };
+  // Dynamically look up the attendance record for the selected date
+  const currentAttendance: DayAttendance = attendances[selectedDate] || {
+    date: selectedDate,
+    morning: false,
+    afternoon: false,
+    evening: false,
+    overtimeHours: 0,
+    dailyBonus: 0,
+    dailyDeduction: 0,
+    note: '',
+  };
 
   const todaySalary = calculateDaySalary(currentAttendance, config, selectedDate);
   const shiftsPerStandard = config.standardShiftsPerDay || 2;
@@ -108,11 +109,29 @@ export const QuickCheckInBar: React.FC<QuickCheckInBarProps> = ({
     }
   };
 
+  // Helper strings for quick day navigation
+  const getOffsetDateStr = (offsetDays: number) => {
+    try {
+      const [y, m, d] = todayStr.split('-').map(Number);
+      const targetDate = new Date(y, m - 1, d + offsetDays);
+      const yStr = targetDate.getFullYear();
+      const mStr = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const dStr = String(targetDate.getDate()).padStart(2, '0');
+      return `${yStr}-${mStr}-${dStr}`;
+    } catch {
+      return todayStr;
+    }
+  };
+
+  const yesterdayStr = getOffsetDateStr(-1);
+  const tomorrowStr = getOffsetDateStr(1);
+
   // Format date display (e.g. Thứ 4, 02/09/2026)
-  const dateObj = new Date(selectedDate);
+  const [selY, selM, selD] = selectedDate.split('-').map(Number);
+  const dateObj = new Date(selY, selM - 1, selD);
   const weekdayNames = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
   const dayName = weekdayNames[dateObj.getDay()] || 'Hôm nay';
-  const dateFormatted = selectedDate.split('-').reverse().join('/');
+  const dateFormatted = `${String(selD).padStart(2, '0')}/${String(selM).padStart(2, '0')}/${selY}`;
 
   return (
     <div className="bg-[#111827] rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-sm space-y-4">
@@ -127,21 +146,43 @@ export const QuickCheckInBar: React.FC<QuickCheckInBarProps> = ({
               <h3 className="text-base font-bold text-white">
                 Chấm Công Nhanh: <span className="text-indigo-300">{dayName} ({dateFormatted})</span>
               </h3>
-              {isSelectedToday ? (
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800/60">
-                  Hôm nay
-                </span>
-              ) : (
+              
+              {/* Quick Date Chips */}
+              <div className="inline-flex items-center gap-1.5 ml-1">
+                <button
+                  onClick={() => setSelectedDate(yesterdayStr)}
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                    selectedDate === yesterdayStr
+                      ? 'bg-indigo-600 text-white font-bold'
+                      : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
+                  }`}
+                >
+                  Hôm qua
+                </button>
                 <button
                   onClick={() => setSelectedDate(todayStr)}
-                  className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition-colors"
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                    selectedDate === todayStr
+                      ? 'bg-emerald-600 text-white font-bold'
+                      : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
+                  }`}
                 >
-                  Quay lại hôm nay
+                  Hôm nay
                 </button>
-              )}
+                <button
+                  onClick={() => setSelectedDate(tomorrowStr)}
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
+                    selectedDate === tomorrowStr
+                      ? 'bg-indigo-600 text-white font-bold'
+                      : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
+                  }`}
+                >
+                  Ngày mai
+                </button>
+              </div>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Chọn nhanh ca làm việc trong ngày. Hệ thống tự động tính lương theo đơn giá 10 triệu/tháng (2 ca = 1 công).
+              Chọn nhanh ca làm việc. Đơn giá chuẩn 10 triệu / 28 ngày công (2 ca = 1 công = 357.143 ₫, không tăng ca).
             </p>
           </div>
         </div>
@@ -161,7 +202,7 @@ export const QuickCheckInBar: React.FC<QuickCheckInBarProps> = ({
               type="date"
               value={selectedDate}
               onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
-              className="bg-transparent text-xs text-slate-300 px-2 py-0.5 font-mono focus:outline-hidden cursor-pointer"
+              className="bg-transparent text-xs text-slate-200 px-2 py-0.5 font-mono focus:outline-hidden cursor-pointer"
             />
             <button
               onClick={() => changeDateByOffset(1)}
@@ -437,25 +478,12 @@ export const QuickCheckInBar: React.FC<QuickCheckInBarProps> = ({
             </button>
           </div>
 
-          {/* Quick Overtime input & Note */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 bg-[#0F172A] px-2.5 py-1 rounded-lg border border-slate-800">
-              <Clock className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-slate-400">Tăng ca OT:</span>
-              <input
-                type="number"
-                min="0"
-                max="12"
-                step="0.5"
-                value={currentAttendance.overtimeHours || ''}
-                placeholder="0"
-                onChange={(ev) =>
-                  onUpdateDay(selectedDate, { overtimeHours: parseFloat(ev.target.value) || 0 })
-                }
-                className="w-12 bg-slate-900 text-center text-white text-xs py-0.5 rounded border border-slate-700 font-mono focus:outline-hidden"
-              />
-              <span className="text-slate-400">giờ</span>
-            </div>
+          {/* Fixed shift notice */}
+          <div className="flex items-center gap-2 text-slate-400 text-xs">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-950/60 border border-indigo-800/40 text-indigo-300">
+              <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
+              <span>3 Ca cố định (Sáng - Chiều - Tối)</span>
+            </span>
           </div>
         </div>
       </div>

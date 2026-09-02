@@ -7,16 +7,18 @@ import { formatVND } from './salaryCalculator';
  */
 export function exportToExcelXLSX(summary: MonthSalarySummary, config: SalaryConfig) {
   const [year, month] = summary.monthKey.split('-');
-  const fileName = `Bang_Cham_Cong_Va_Tinh_Luong_Thang_${month}_${year}_${config.employeeName.replace(/\s+/g, '_')}.xlsx`;
+  const fileName = `Bang_Cham_Cong_Va_Tinh_Luong_Thang_${month}_${year}_${(config.employeeName || 'NhanVien').replace(/\s+/g, '_')}.xlsx`;
+  const shiftsPerDay = config.standardShiftsPerDay || 2;
+  const standardDays = config.standardDaysInMonth || 28;
 
   // Prepare header info rows
   const wsData: (string | number | null)[][] = [
-    [`BẢNG CHẤM CÔNG & TÍNH LƯƠNG CA GÃY - THÁNG ${month}/${year}`],
-    [`Họ và tên: ${config.employeeName || 'Cá nhân'}`, `Nơi làm việc: ${config.workplace || 'Chung'}`],
+    [`BẢNG CHẤM CÔNG & TÍNH LƯƠNG - THÁNG ${month}/${year}`],
+    [`Họ và tên: ${config.employeeName || 'Nhân viên'}`, `Nơi làm việc: ${config.workplace || 'Toàn thời gian'}`],
     [
       `Lương cơ bản: ${formatVND(config.baseSalary)}`,
-      `Công chuẩn: ${config.standardDaysInMonth} ngày`,
-      `Quy chuẩn: ${config.standardShiftsPerDay} ca/công`,
+      `Công chuẩn: ${standardDays} ngày (Tháng nghỉ 2 ngày)`,
+      `Quy chuẩn: ${shiftsPerDay} ca = 1 công chuẩn`,
     ],
     [], // Blank line
     [
@@ -27,11 +29,10 @@ export function exportToExcelXLSX(summary: MonthSalarySummary, config: SalaryCon
       'Ca Chiều',
       'Ca Tối',
       'Tổng Ca',
-      'Giờ Làm (h)',
-      'Tăng Ca (h)',
+      'Công Quy Đổi',
       'Lương Ca (VNĐ)',
       'Tiền Ăn (VNĐ)',
-      'Thưởng/Tip (VNĐ)',
+      'Thưởng (VNĐ)',
       'Giảm Trừ (VNĐ)',
       'Tổng Thu Nhập (VNĐ)',
       'Ghi Chú',
@@ -47,9 +48,8 @@ export function exportToExcelXLSX(summary: MonthSalarySummary, config: SalaryCon
       day.dayAttendance.morning ? '✓' : '-',
       day.dayAttendance.afternoon ? '✓' : '-',
       day.dayAttendance.evening ? '✓' : '-',
-      day.totalShifts,
-      day.totalHours,
-      day.dayAttendance.overtimeHours || 0,
+      day.totalShifts > 0 ? day.totalShifts : 0,
+      day.totalShifts > 0 ? Number((day.totalShifts / shiftsPerDay).toFixed(1)) : 0,
       Math.round(day.shiftSalary),
       Math.round(day.mealAllowance),
       Math.round(day.dailyBonus),
@@ -69,13 +69,12 @@ export function exportToExcelXLSX(summary: MonthSalarySummary, config: SalaryCon
     summary.projectedAfternoonCount,
     summary.projectedEveningCount,
     summary.projectedTotalShifts,
-    '',
-    summary.projectedOvertimeHours,
+    summary.projectedStandardDays,
     Math.round(summary.projectedBaseSalary),
     Math.round(summary.projectedMealAllowance),
     '',
-    '',
-    Math.round(summary.projectedGrossSalary),
+    Math.round(summary.projectedDeductions),
+    Math.round(summary.projectedNetSalary),
     '',
   ]);
 
@@ -85,12 +84,10 @@ export function exportToExcelXLSX(summary: MonthSalarySummary, config: SalaryCon
   wsData.push(['2. Số công thực tế đã làm đến hôm nay:', `${summary.workedStandardDays} công (${summary.workedTotalShifts} ca)`]);
   wsData.push(['3. Lương tính đến ngày hiện tại (Lũy kế):', Math.round(summary.accumulatedNetSalary)]);
   wsData.push(['4. Lương ca & công cả tháng:', Math.round(summary.projectedBaseSalary)]);
-  wsData.push(['5. Tiền tăng ca:', Math.round(summary.projectedOvertimeSalary)]);
-  wsData.push(['6. Tiền ăn ca gãy:', Math.round(summary.projectedMealAllowance)]);
-  wsData.push(['7. Phụ cấp cố định (Xăng xe/ĐT):', Math.round(summary.projectedFixedAllowances)]);
-  wsData.push(['8. Thưởng chuyên cần:', Math.round(summary.projectedAttendanceBonus)]);
-  wsData.push(['9. Các khoản giảm trừ / Tạm ứng:', Math.round(summary.projectedDeductions)]);
-  wsData.push(['10. LƯƠNG THỰC NHẬN DỰ KIẾN CẢ THÁNG:', Math.round(summary.projectedNetSalary)]);
+  wsData.push(['5. Phụ cấp & Tiền ăn:', 0]);
+  wsData.push(['6. Tăng ca OT:', '0 (Không có)']);
+  wsData.push(['7. Các khoản giảm trừ / Tạm ứng:', Math.round(summary.projectedDeductions)]);
+  wsData.push(['8. LƯƠNG THỰC NHẬN DỰ KIẾN CẢ THÁNG (NET):', Math.round(summary.projectedNetSalary)]);
 
   // Create worksheet
   const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -103,9 +100,8 @@ export function exportToExcelXLSX(summary: MonthSalarySummary, config: SalaryCon
     { wch: 10 }, // Sáng
     { wch: 10 }, // Chiều
     { wch: 10 }, // Tối
-    { wch: 9 },  // Tổng ca
-    { wch: 12 }, // Giờ làm
-    { wch: 12 }, // Tăng ca
+    { wch: 10 }, // Tổng ca
+    { wch: 14 }, // Công
     { wch: 16 }, // Lương ca
     { wch: 14 }, // Tiền ăn
     { wch: 14 }, // Thưởng
@@ -128,6 +124,7 @@ export function exportToExcelXLSX(summary: MonthSalarySummary, config: SalaryCon
 export function exportToCSV(summary: MonthSalarySummary, config: SalaryConfig) {
   const [year, month] = summary.monthKey.split('-');
   const fileName = `Bang_Cham_Cong_Thang_${month}_${year}.csv`;
+  const shiftsPerDay = config.standardShiftsPerDay || 2;
 
   const rows: string[][] = [
     [`BẢNG CHẤM CÔNG VÀ TÍNH LƯƠNG THÁNG ${month}/${year}`],
@@ -141,8 +138,7 @@ export function exportToCSV(summary: MonthSalarySummary, config: SalaryConfig) {
       'Ca Chiều',
       'Ca Tối',
       'Tổng Ca',
-      'Giờ Làm',
-      'Tăng Ca (h)',
+      'Công',
       'Lương Ca (đ)',
       'Tiền Ăn (đ)',
       'Thưởng (đ)',
@@ -161,8 +157,7 @@ export function exportToCSV(summary: MonthSalarySummary, config: SalaryConfig) {
       day.dayAttendance.afternoon ? '1' : '0',
       day.dayAttendance.evening ? '1' : '0',
       String(day.totalShifts),
-      String(day.totalHours),
-      String(day.dayAttendance.overtimeHours || 0),
+      day.totalShifts > 0 ? (day.totalShifts / shiftsPerDay).toFixed(1) : '0',
       String(Math.round(day.shiftSalary)),
       String(Math.round(day.mealAllowance)),
       String(Math.round(day.dailyBonus)),
@@ -192,8 +187,9 @@ export function exportToCSV(summary: MonthSalarySummary, config: SalaryConfig) {
  */
 export async function copyForGoogleSheets(summary: MonthSalarySummary, config: SalaryConfig): Promise<boolean> {
   const [year, month] = summary.monthKey.split('-');
+  const shiftsPerDay = config.standardShiftsPerDay || 2;
   const rows: string[][] = [
-    [`BẢNG CHẤM CÔNG & TÍNH LƯƠNG CA GÃY - THÁNG ${month}/${year}`],
+    [`BẢNG CHẤM CÔNG & TÍNH LƯƠNG - THÁNG ${month}/${year}`],
     [`Nhân viên: ${config.employeeName}`, `Lương cơ bản: ${config.baseSalary}`],
     [],
     [
@@ -204,8 +200,7 @@ export async function copyForGoogleSheets(summary: MonthSalarySummary, config: S
       'Ca Chiều',
       'Ca Tối',
       'Tổng Ca',
-      'Giờ Làm',
-      'Tăng Ca (h)',
+      'Công',
       'Lương Ca',
       'Tiền Ăn',
       'Thưởng',
@@ -224,8 +219,7 @@ export async function copyForGoogleSheets(summary: MonthSalarySummary, config: S
       day.dayAttendance.afternoon ? 'x' : '',
       day.dayAttendance.evening ? 'x' : '',
       String(day.totalShifts),
-      String(day.totalHours),
-      String(day.dayAttendance.overtimeHours || 0),
+      day.totalShifts > 0 ? (day.totalShifts / shiftsPerDay).toFixed(1) : '0',
       String(Math.round(day.shiftSalary)),
       String(Math.round(day.mealAllowance)),
       String(Math.round(day.dailyBonus)),

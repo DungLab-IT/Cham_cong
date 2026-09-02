@@ -4,7 +4,6 @@ import {
   Sun,
   Sunset,
   Moon,
-  Clock,
   Save,
   Check,
   Zap,
@@ -12,6 +11,7 @@ import {
   Layers,
   DollarSign,
   AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { DaySalaryDetail, SalaryConfig, DayAttendance } from '../types';
 import { formatVND } from '../utils/salaryCalculator';
@@ -35,7 +35,6 @@ export const DayEditModal: React.FC<DayEditModalProps> = ({
   const [morning, setMorning] = useState(day.morning);
   const [afternoon, setAfternoon] = useState(day.afternoon);
   const [evening, setEvening] = useState(day.evening);
-  const [overtimeHours, setOvertimeHours] = useState(day.overtimeHours || 0);
   const [dailyBonus, setDailyBonus] = useState(day.dailyBonus || 0);
   const [dailyDeduction, setDailyDeduction] = useState(day.dailyDeduction || 0);
   const [note, setNote] = useState(day.note || '');
@@ -49,18 +48,16 @@ export const DayEditModal: React.FC<DayEditModalProps> = ({
   const shiftsPerStandard = config.standardShiftsPerDay || 2;
   const standardDays = Number((activeShifts / shiftsPerStandard).toFixed(1));
 
-  // Shift rate calculation
-  const shiftRate = Math.round(config.baseSalary / ((config.standardDaysInMonth || 26) * 2));
-  const otRate = config.overtimeRatePerHour || 48077;
-  const calculatedDayEarnings =
-    activeShifts * shiftRate + overtimeHours * otRate + dailyBonus - dailyDeduction;
+  // Shift rate calculation based on 10,000,000 / 28 days
+  const shiftRate = Math.round(config.baseSalary / ((config.standardDaysInMonth || 28) * shiftsPerStandard));
+  const calculatedDayEarnings = activeShifts * shiftRate + dailyBonus - dailyDeduction;
 
   const handleSave = () => {
     onSave(day.date, {
       morning,
       afternoon,
       evening,
-      overtimeHours,
+      overtimeHours: 0,
       dailyBonus,
       dailyDeduction,
       note,
@@ -75,52 +72,94 @@ export const DayEditModal: React.FC<DayEditModalProps> = ({
     setNote(noteVal);
   };
 
+  // State flags for active preset
   const isMorningNight = morning && !afternoon && evening;
   const isMorningAfternoon = morning && afternoon && !evening;
   const isAfternoonNight = !morning && afternoon && evening;
+  const isAllThree = morning && afternoon && evening;
   const isOnlyMorning = morning && !afternoon && !evening;
   const isOnlyAfternoon = !morning && afternoon && !evening;
   const isOnlyEvening = !morning && !afternoon && evening;
-  const isAllThree = morning && afternoon && evening;
   const isDayOff = !morning && !afternoon && !evening;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs">
-      <div className="bg-[#111827] rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-800 animate-in fade-in zoom-in-95 duration-200 text-slate-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs overflow-y-auto">
+      <div className="bg-[#111827] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-8">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 bg-[#0F172A] flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-[#0F172A]">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-white">
-                Chấm Công: Ngày {day.date.split('-').reverse().join('/')}
-              </h3>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-950 text-indigo-300 border border-indigo-700/60">
-                {standardDays} công ({activeShifts} ca)
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800/60 font-semibold">
+                Chấm Công Chi Tiết
               </span>
+              <span className="text-xs text-slate-400 font-medium">{dayDetail.dayOfWeek}</span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">{dayDetail.dayOfWeek}</p>
+            <h3 className="text-base sm:text-lg font-bold text-white mt-1 flex items-center gap-2">
+              <span>Ngày {day.date.split('-').slice(1).reverse().join('/')}</span>
+              <span className="text-xs text-slate-400 font-normal">({day.date})</span>
+            </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-5 space-y-4 max-h-[75vh] overflow-y-auto">
-          {/* Quick Select: 2 Ca (1 công) */}
+        <div className="p-4 sm:p-5 space-y-4 text-xs">
+          {/* Work Summary Status */}
+          <div className="p-3.5 bg-[#0F172A] rounded-xl border border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold ${
+                  activeShifts === 2
+                    ? 'bg-indigo-600 text-white'
+                    : activeShifts > 0
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-slate-800 text-slate-400'
+                }`}
+              >
+                {activeShifts}
+              </div>
+              <div>
+                <p className="font-bold text-white text-sm">
+                  {activeShifts === 0
+                    ? 'Nghỉ làm'
+                    : activeShifts === 2
+                    ? 'Làm 2 ca = 1.0 công chuẩn'
+                    : `${activeShifts} ca = ${standardDays} công`}
+                </p>
+                <p className="text-slate-400 text-[11px]">
+                  {activeShifts > 0
+                    ? `${activeShifts} ca × ${formatVND(shiftRate)}`
+                    : 'Không phát sinh lương ca'}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
+                Lương ngày
+              </span>
+              <div className="text-emerald-400 font-bold font-mono text-sm">
+                {formatVND(calculatedDayEarnings)}
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Select: 2 Ca (1 công chuẩn) */}
           <div className="space-y-2">
-            <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+            <div className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5 text-amber-400" />
-              <span>Chọn nhanh 2 ca làm việc (1.0 công chuẩn)</span>
+              <span>Chọn nhanh mẫu 2 ca/ngày (Đủ 1 công chuẩn • 357.143 ₫)</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => applyPreset(true, false, true, 'Ca gãy: Sáng + Tối (1 công)')}
-                className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                onClick={() => applyPreset(true, false, true, 'Làm 2 ca: Sáng + Tối (1 công)')}
+                className={`p-2.5 rounded-xl border text-center transition-all ${
                   isMorningNight
                     ? 'bg-indigo-600 text-white border-indigo-400 shadow-xs'
                     : 'bg-[#0F172A] text-slate-300 border-slate-800 hover:border-slate-700'
@@ -132,8 +171,8 @@ export const DayEditModal: React.FC<DayEditModalProps> = ({
 
               <button
                 type="button"
-                onClick={() => applyPreset(true, true, false, 'Ca liền: Sáng + Chiều (1 công)')}
-                className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                onClick={() => applyPreset(true, true, false, 'Làm 2 ca: Sáng + Chiều (1 công)')}
+                className={`p-2.5 rounded-xl border text-center transition-all ${
                   isMorningAfternoon
                     ? 'bg-indigo-600 text-white border-indigo-400 shadow-xs'
                     : 'bg-[#0F172A] text-slate-300 border-slate-800 hover:border-slate-700'
@@ -145,8 +184,8 @@ export const DayEditModal: React.FC<DayEditModalProps> = ({
 
               <button
                 type="button"
-                onClick={() => applyPreset(false, true, true, 'Ca chiều tối: Chiều + Tối (1 công)')}
-                className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                onClick={() => applyPreset(false, true, true, 'Làm 2 ca: Chiều + Tối (1 công)')}
+                className={`p-2.5 rounded-xl border text-center transition-all ${
                   isAfternoonNight
                     ? 'bg-indigo-600 text-white border-indigo-400 shadow-xs'
                     : 'bg-[#0F172A] text-slate-300 border-slate-800 hover:border-slate-700'
@@ -162,7 +201,7 @@ export const DayEditModal: React.FC<DayEditModalProps> = ({
           <div className="space-y-2">
             <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
               <Sun className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Chọn 1 ca đơn lẻ (0.5 công) hoặc Tùy chọn khác</span>
+              <span>Chọn 1 ca đơn lẻ (0.5 công • 178.571 ₫) hoặc Tùy chọn khác</span>
             </div>
             <div className="grid grid-cols-5 gap-1.5">
               <button
@@ -271,39 +310,18 @@ export const DayEditModal: React.FC<DayEditModalProps> = ({
             </div>
           </div>
 
-          {/* OT and Notes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
-                Tăng ca OT ngoài ca (giờ)
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  min="0"
-                  max="16"
-                  step="0.5"
-                  value={overtimeHours || ''}
-                  placeholder="0"
-                  onChange={(e) => setOvertimeHours(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-[#0F172A] border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-hidden focus:border-indigo-500"
-                />
-                <span className="absolute right-3 top-2.5 text-xs text-slate-500">giờ</span>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
-                Ghi chú ngày
-              </label>
-              <input
-                type="text"
-                value={note}
-                placeholder="VD: Đổi ca, làm bù..."
-                onChange={(e) => setNote(e.target.value)}
-                className="w-full bg-[#0F172A] border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-hidden focus:border-indigo-500"
-              />
-            </div>
+          {/* Notes input */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">
+              Ghi chú ngày làm việc
+            </label>
+            <input
+              type="text"
+              value={note}
+              placeholder="VD: Đổi ca, làm bù, công việc phụ trách..."
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full bg-[#0F172A] border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-hidden focus:border-indigo-500"
+            />
           </div>
 
           {/* Earnings summary preview */}

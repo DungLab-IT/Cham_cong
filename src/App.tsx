@@ -29,6 +29,7 @@ import { AllTimeSalaryView } from './components/views/AllTimeSalaryView';
 import { SalarySettingsView } from './components/views/SalarySettingsView';
 import { DayEditModal } from './components/DayEditModal';
 import { PrintSalarySlip } from './components/PrintSalarySlip';
+import { SalarySlipModal } from './components/SalarySlipModal';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { MonthSelectorModal } from './components/MonthSelectorModal';
 
@@ -42,6 +43,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTabKey>('schedule');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMonthSelectorOpen, setIsMonthSelectorOpen] = useState(false);
+  const [isSalarySlipModalOpen, setIsSalarySlipModalOpen] = useState(false);
   const [config, setConfig] = useState<SalaryConfig>(() => loadSalaryConfig());
   const [attendances, setAttendances] = useState<Record<string, DayAttendance>>(() => loadAttendances());
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
@@ -118,7 +120,6 @@ export default function App() {
     for (let d = 1; d <= totalDays; d++) {
       const dayStr = d < 10 ? `0${d}` : `${d}`;
       const dateKey = `${currentMonthKey}-${dayStr}`;
-      const dayOfWeek = new Date(year, month - 1, d).getDay();
 
       if (pattern === 'clear') {
         updates[dateKey] = {
@@ -126,34 +127,32 @@ export default function App() {
           afternoon: false,
           evening: false,
           overtimeHours: 0,
-          dailyBonus: 0,
-          dailyDeduction: 0,
-          note: '',
+          note: 'Nghỉ',
         };
-      } else if (dayOfWeek !== 0) {
-        // Thứ 2 đến thứ 7
-        if (pattern === 'morning_evening') {
-          updates[dateKey] = {
-            morning: true,
-            afternoon: false,
-            evening: true,
-            note: 'Ca gãy: Sáng + Đêm (1 công)',
-          };
-        } else if (pattern === 'morning_afternoon') {
-          updates[dateKey] = {
-            morning: true,
-            afternoon: true,
-            evening: false,
-            note: 'Ca liền: Sáng + Chiều (1 công)',
-          };
-        } else if (pattern === 'afternoon_evening') {
-          updates[dateKey] = {
-            morning: false,
-            afternoon: true,
-            evening: true,
-            note: 'Ca gãy: Chiều + Đêm (1 công)',
-          };
-        }
+      } else if (pattern === 'morning_evening') {
+        updates[dateKey] = {
+          morning: true,
+          afternoon: false,
+          evening: true,
+          overtimeHours: 0,
+          note: 'Ca gãy: Sáng + Tối (1 công)',
+        };
+      } else if (pattern === 'morning_afternoon') {
+        updates[dateKey] = {
+          morning: true,
+          afternoon: true,
+          evening: false,
+          overtimeHours: 0,
+          note: 'Ca ngày: Sáng + Chiều (1 công)',
+        };
+      } else if (pattern === 'afternoon_evening') {
+        updates[dateKey] = {
+          morning: false,
+          afternoon: true,
+          evening: true,
+          overtimeHours: 0,
+          note: 'Ca gãy: Chiều + Tối (1 công)',
+        };
       }
     }
 
@@ -179,8 +178,8 @@ export default function App() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleOpenPrintModal = () => {
+    setIsSalarySlipModalOpen(true);
   };
 
   const todayAttendance = attendances[todayStr];
@@ -197,7 +196,7 @@ export default function App() {
           config={config}
           summary={summary}
           onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
-          onPrintSlip={handlePrint}
+          onPrintSlip={handleOpenPrintModal}
           onExportExcel={handleExportExcel}
           isMobileOpen={isMobileSidebarOpen}
           setIsMobileOpen={setIsMobileSidebarOpen}
@@ -218,7 +217,7 @@ export default function App() {
             onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
             onExportExcel={handleExportExcel}
             onCopyGoogleSheet={handleCopyGoogleSheet}
-            onPrint={handlePrint}
+            onPrint={handleOpenPrintModal}
             copySuccess={copySuccess}
             summary={summary}
             onOpenMonthSelector={() => setIsMonthSelectorOpen(true)}
@@ -237,6 +236,7 @@ export default function App() {
               onOpenDayDetail={setSelectedDayDetail}
               onBatchApply={handleBatchApply}
               todayAttendance={todayAttendance}
+              attendances={attendances}
             />
           )}
 
@@ -246,7 +246,7 @@ export default function App() {
               summary={summary}
               config={config}
               currentDateStr={todayStr}
-              onPrintSlip={handlePrint}
+              onPrintSlip={handleOpenPrintModal}
             />
           )}
 
@@ -261,7 +261,7 @@ export default function App() {
               onOpenDayDetail={setSelectedDayDetail}
               onExportExcel={handleExportExcel}
               onCopyGoogleSheet={handleCopyGoogleSheet}
-              onPrint={handlePrint}
+              onPrint={handleOpenPrintModal}
               copySuccess={copySuccess}
               todayAttendance={todayAttendance}
             />
@@ -277,7 +277,7 @@ export default function App() {
               onOpenDayDetail={setSelectedDayDetail}
               onBatchApply={handleBatchApply}
               onExportExcel={handleExportExcel}
-              onPrint={handlePrint}
+              onPrint={handleOpenPrintModal}
               onNavigateToTab={setActiveTab}
             />
           )}
@@ -313,6 +313,13 @@ export default function App() {
           setIsMonthSelectorOpen(false);
         }}
         attendances={attendances}
+        config={config}
+      />
+
+      <SalarySlipModal
+        isOpen={isSalarySlipModalOpen}
+        onClose={() => setIsSalarySlipModalOpen(false)}
+        summary={summary}
         config={config}
       />
 

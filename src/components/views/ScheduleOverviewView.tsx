@@ -26,6 +26,7 @@ interface ScheduleOverviewViewProps {
   onOpenDayDetail: (day: DaySalaryDetail) => void;
   onBatchApply: (pattern: 'morning_evening' | 'morning_afternoon' | 'afternoon_evening' | 'clear') => void;
   todayAttendance: DayAttendance | undefined;
+  attendances: Record<string, DayAttendance>;
 }
 
 export const ScheduleOverviewView: React.FC<ScheduleOverviewViewProps> = ({
@@ -36,6 +37,7 @@ export const ScheduleOverviewView: React.FC<ScheduleOverviewViewProps> = ({
   onOpenDayDetail,
   onBatchApply,
   todayAttendance,
+  attendances,
 }) => {
   const [yearStr, monthStr] = summary.monthKey.split('-');
   const month = parseInt(monthStr, 10);
@@ -104,7 +106,7 @@ export const ScheduleOverviewView: React.FC<ScheduleOverviewViewProps> = ({
       {/* Quick Check-In Widget (Chấm công ngày mới) */}
       <QuickCheckInBar
         todayStr={currentDateStr}
-        todayAttendance={todayAttendance}
+        attendances={attendances}
         onUpdateDay={onUpdateDay}
         config={config}
       />

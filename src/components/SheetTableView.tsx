@@ -172,7 +172,7 @@ export const SheetTableView: React.FC<SheetTableViewProps> = ({
                 </div>
               </th>
               <th className="py-3 px-3 text-center w-24">Tổng Ca</th>
-              <th className="py-3 px-3 text-center w-24">Tăng ca (h)</th>
+              <th className="py-3 px-3 text-center w-24">Công</th>
               <th className="py-3 px-3 text-right w-28">Lương Ca</th>
               <th className="py-3 px-3 text-right w-24">Tiền Ăn</th>
               <th className="py-3 px-3 text-right w-24">Thưởng / Tip</th>
@@ -303,23 +303,15 @@ export const SheetTableView: React.FC<SheetTableViewProps> = ({
                     )}
                   </td>
 
-                  {/* Tăng ca (h) */}
-                  <td className="py-1.5 px-3 text-center">
-                    <div className="inline-flex items-center justify-center">
-                      <input
-                        type="number"
-                        min="0"
-                        max="12"
-                        step="0.5"
-                        value={day.overtimeHours || 0}
-                        onChange={(e) =>
-                          onUpdateDay(day.date, {
-                            overtimeHours: Math.max(0, parseFloat(e.target.value) || 0),
-                          })
-                        }
-                        className="w-14 text-center py-1 px-1 text-xs border border-slate-700 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 font-mono bg-[#0F172A] text-white"
-                      />
-                    </div>
+                  {/* Công quy đổi */}
+                  <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                    {detail.totalShifts === 0 ? (
+                      <span className="text-slate-500 font-mono">-</span>
+                    ) : (
+                      <span className="font-mono font-semibold text-slate-200">
+                        {(detail.totalShifts / (config.standardShiftsPerDay || 2)).toFixed(1)} công
+                      </span>
+                    )}
                   </td>
 
                   {/* Lương Ca */}
@@ -434,8 +426,8 @@ export const SheetTableView: React.FC<SheetTableViewProps> = ({
               <td className="py-3 px-3 text-center text-emerald-400 font-mono">
                 {summary.projectedTotalShifts} ca
               </td>
-              <td className="py-3 px-3 text-center text-amber-300 font-mono">
-                {summary.projectedOvertimeHours}h
+              <td className="py-3 px-3 text-center text-indigo-300 font-mono">
+                {summary.projectedStandardDays} công
               </td>
               <td className="py-3 px-3 text-right font-mono">
                 {formatVND(summary.projectedBaseSalary)}

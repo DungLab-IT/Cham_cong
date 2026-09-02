@@ -107,10 +107,8 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
 
   // Income composition breakdown
   const incomeComposition = [
-    { name: 'Lương ca cơ bản', value: summary.projectedBaseSalary, fill: '#6366F1' },
-    { name: 'Tăng ca OT', value: summary.projectedOvertimeSalary, fill: '#EC4899' },
-    { name: 'Tiền ăn ca gãy', value: summary.projectedMealAllowance, fill: '#10B981' },
-    { name: 'Phụ cấp cố định', value: summary.projectedFixedAllowances, fill: '#3B82F6' },
+    { name: 'Lương ca & ngày công', value: summary.projectedBaseSalary, fill: '#6366F1' },
+    { name: 'Phụ cấp & Tiền ăn', value: summary.projectedMealAllowance + summary.projectedFixedAllowances, fill: '#10B981' },
     { name: 'Thưởng chuyên cần', value: summary.projectedAttendanceBonus, fill: '#F59E0B' },
   ].filter((item) => item.value > 0);
 
@@ -311,24 +309,20 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
           </div>
         </div>
 
-        {/* Card 4: Overtime OT & Attendance Bonus */}
+        {/* Card 4: Standard Days */}
         <div className="bg-[#111827] p-5 rounded-2xl border border-slate-800 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Tăng Ca & Chuyên Cần</span>
+            <span className="text-xs font-medium text-slate-400">Chuẩn Ngày Công</span>
             <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
               <Award className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-3">
             <div className="text-2xl font-black text-purple-300 font-mono tracking-tight">
-              {summary.projectedOvertimeHours} <span className="text-sm font-normal text-slate-400">giờ OT</span>
+              {summary.projectedStandardDays} / {config.standardDaysInMonth || 28} <span className="text-sm font-normal text-slate-400">công</span>
             </div>
             <p className="text-[11px] text-slate-400 mt-1">
-              Chuyên cần: {summary.hasEarnedAttendanceBonus ? (
-                <span className="text-emerald-400 font-semibold">Đạt (+{formatVND(summary.projectedAttendanceBonus)})</span>
-              ) : (
-                <span className="text-slate-500">Chưa đạt ({summary.projectedStandardDays}/{config.attendanceRequiredDays} công)</span>
-              )}
+              Tháng nghỉ {offDaysCount} ngày (Chuẩn 28 ngày công)
             </p>
           </div>
         </div>
@@ -452,8 +446,8 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
                 <th className="py-2.5 px-3 text-center">Sáng</th>
                 <th className="py-2.5 px-3 text-center">Chiều</th>
                 <th className="py-2.5 px-3 text-center">Tối</th>
-                <th className="py-2.5 px-3 text-center">Tăng ca (OT)</th>
-                <th className="py-2.5 px-3 text-center">Phụ cấp ăn</th>
+                <th className="py-2.5 px-3 text-center">Công</th>
+                <th className="py-2.5 px-3 text-center">Phụ cấp</th>
                 <th className="py-2.5 px-3 text-right">Lương ca</th>
                 <th className="py-2.5 px-3 text-right font-bold text-slate-300">Tổng ngày</th>
                 <th className="py-2.5 px-3">Ghi chú</th>
@@ -518,9 +512,9 @@ export const MonthlyReportView: React.FC<MonthlyReportViewProps> = ({
                     </td>
 
                     <td className="py-2.5 px-3 text-center font-mono">
-                      {d.dayAttendance.overtimeHours > 0 ? (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-pink-950/60 text-pink-300 border border-pink-800/40">
-                          +{d.dayAttendance.overtimeHours}h
+                      {d.totalShifts > 0 ? (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-950/60 text-indigo-300 border border-indigo-800/40">
+                          {(d.totalShifts / (config.standardShiftsPerDay || 2)).toFixed(1)} công
                         </span>
                       ) : (
                         <span className="text-slate-600">-</span>
